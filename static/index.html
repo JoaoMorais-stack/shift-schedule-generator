@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gerador de Escalas</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">Planejamento de turnos, folgas e disponibilidade</p>
+                <h1>Gerador de Escalas</h1>
+            </div>
+            <div class="periodo">
+                <label>Início <input id="inicio" type="date"></label>
+                <label>Fim <input id="fim" type="date"></label>
+            </div>
+        </header>
+
+        <main class="grid">
+            <section class="painel centro">
+                <div class="section-title principal">
+                    <div>
+                        <h2>Escala do período</h2>
+                        <p id="resumoEscala">Escolha um período para visualizar.</p>
+                    </div>
+                </div>
+                <div class="acoes-periodo">
+                    <button id="btnVerEscala" class="action-card" type="button">
+                        <strong>Ver escala</strong>
+                        <span>Só mostra o que já está salvo.</span>
+                    </button>
+                    <button id="btnMontarFaltantes" class="action-card primary" type="button">
+                        <strong>Montar faltantes</strong>
+                        <span>Completa dias vazios e mantém edições.</span>
+                    </button>
+                    <button id="btnRefazerPeriodo" class="action-card danger" type="button">
+                        <strong>Refazer período</strong>
+                        <span>Recalcula tudo no intervalo escolhido.</span>
+                    </button>
+                </div>
+                <div class="legenda">
+                    <span class="dot regular"></span> Regular
+                    <span class="dot especial"></span> Especial
+                    <span class="dot prioritaria"></span> Prioritaria
+                    <span class="dot editado"></span> Editado
+                </div>
+                <div class="tabela-wrap">
+                    <table class="escala-table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Dia</th>
+                                <th>Tipo</th>
+                                <th>Colaborador</th>
+                                <th>Origem</th>
+                                <th>Obs</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="escalaBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <aside class="painel lateral">
+                <details class="fold" open>
+                    <summary><span>Marcos da rotação</span><small>último serviço confirmado por cor</small></summary>
+                    <div class="fold-body">
+                    <div class="section-title compact">
+                        <h2>Marcos da rotação</h2>
+                        <button id="btnSalvarConfig" class="btn small" type="button">Salvar</button>
+                    </div>
+                    <div class="info-box">
+                        <strong>Regra simples</strong>
+                        <p>Informe a última alocação confirmada de cada categoria. O sistema continua a rotação e respeita férias, indisponibilidades e ajustes já salvos.</p>
+                    </div>
+                    <div id="rotacaoStatus" class="rotacao-status"></div>
+                    <div class="marcos-grid">
+                        <div class="marco-editor regular">
+                            <strong>Última regular confirmada</strong>
+                            <label>Data <input id="marco_regular_data" type="date"></label>
+                            <label>Colaborador <select id="marco_regular_id"></select></label>
+                        </div>
+                        <div class="marco-editor especial">
+                            <strong>Última especial confirmada</strong>
+                            <label>Data <input id="marco_especial_data" type="date"></label>
+                            <label>Colaborador <select id="marco_especial_id"></select></label>
+                        </div>
+                        <div class="marco-editor prioritaria">
+                            <strong>Última prioritaria confirmada</strong>
+                            <label>Data <input id="marco_prioritaria_data" type="date"></label>
+                            <label>Colaborador <select id="marco_prioritaria_id"></select></label>
+                        </div>
+                    </div>
+                    <div class="hint-line">Exemplo: se a última alocação regular foi de Ana em 24/05, a próxima começa com o colaborador seguinte disponível.</div>
+                    <div id="listaRotacao" class="mini-lista"></div>
+                    </div>
+                </details>
+
+                <details class="fold">
+                    <summary><span>Colaboradores</span><small>editar nomes, ordem e participação</small></summary>
+                    <div class="fold-body">
+                    <div class="section-title compact">
+                        <h2>Colaboradores</h2>
+                        <button id="btnNovoColaborador" class="btn small" type="button">Novo</button>
+                    </div>
+                    <div id="colaboradoresEditor" class="editor-lista"></div>
+                    </div>
+                </details>
+
+                <details class="fold">
+                    <summary><span>Indisponibilidades</span><small>ausências, cursos e outros compromissos</small></summary>
+                    <div class="fold-body">
+                    <div class="section-title compact">
+                        <h2>Nova indisponibilidade</h2>
+                    </div>
+                    <form id="formIndisponibilidade" class="stack">
+                        <select name="colaborador_id"></select>
+                        <div class="duo">
+                            <label>Início <input name="inicio" type="date" required></label>
+                            <label>Fim <input name="fim" type="date" required></label>
+                        </div>
+                        <input name="motivo" placeholder="Curso, afastamento, compromisso...">
+                        <input name="observacao" placeholder="Observação">
+                        <button class="btn" type="submit">Adicionar indisponibilidade</button>
+                    </form>
+                    <div id="indisponibilidadesLista" class="chips"></div>
+                    </div>
+                </details>
+
+                <details class="fold">
+                    <summary><span>Feriado local</span><small>marcar um dia como especial/prioritaria</small></summary>
+                    <div class="fold-body">
+                    <div class="section-title compact">
+                        <h2>Feriado local</h2>
+                    </div>
+                    <form id="formFeriado" class="stack">
+                        <div class="duo">
+                            <label>Data <input name="data" type="date" required></label>
+                            <label>Tipo
+                                <select name="tipo">
+                                    <option value="especial">Especial</option>
+                                    <option value="prioritaria">Prioritaria</option>
+                                    <option value="regular">Regular</option>
+                                </select>
+                            </label>
+                        </div>
+                        <input name="nome" placeholder="Nome do feriado">
+                        <button class="btn" type="submit">Adicionar</button>
+                    </form>
+                    <div id="feriadosLista" class="chips"></div>
+                    </div>
+                </details>
+            </aside>
+
+            <aside class="painel consulta">
+                <details class="fold" open>
+                    <summary><span>Pesquisar histórico</span><small>contar serviços por período</small></summary>
+                    <div class="fold-body">
+                    <div class="section-title compact">
+                        <h2>Pesquisar histórico</h2>
+                    </div>
+                    <form id="formConsulta" class="stack">
+                        <div class="duo">
+                            <label>De <input name="inicio" type="date" required></label>
+                            <label>Até <input name="fim" type="date" required></label>
+                        </div>
+                        <label>Colaborador
+                            <select name="colaborador_id"></select>
+                        </label>
+                        <button class="btn primary" type="submit">Consultar</button>
+                    </form>
+                    <div id="totaisConsulta" class="totais"></div>
+                    <div id="resultadoConsulta" class="resultado"></div>
+                    </div>
+                </details>
+
+                <details class="fold">
+                    <summary><span>Férias cadastradas</span><small>períodos por colaborador</small></summary>
+                    <div class="fold-body">
+                    <div class="section-title compact">
+                        <h2>Férias cadastradas</h2>
+                    </div>
+                    <form id="formFerias" class="stack">
+                        <select name="colaborador_id"></select>
+                        <div class="duo">
+                            <label>Início <input name="inicio" type="date" required></label>
+                            <label>Fim <input name="fim" type="date" required></label>
+                        </div>
+                        <div class="duo">
+                            <label>Período <input name="periodo" type="number" min="1" value="1"></label>
+                            <label>Dias <input name="dias" type="number" min="0" value="0"></label>
+                        </div>
+                        <button class="btn" type="submit">Adicionar férias</button>
+                    </form>
+                    <div id="feriasLista" class="chips"></div>
+                    </div>
+                </details>
+
+                <details class="fold">
+                    <summary><span>Turnos da equipe</span><small>alocações por horário e equipe</small></summary>
+                    <div class="fold-body">
+                    <div class="section-title compact">
+                        <h2>Turnos da equipe</h2>
+                    </div>
+                    <form id="formTurno" class="stack">
+                        <input name="id" type="hidden">
+                        <select name="colaborador_id"></select>
+                        <div class="duo">
+                            <input name="horario" placeholder="Horário. Ex: 08:00-14:00" required>
+                            <input name="equipe" placeholder="Equipe. Ex: Equipe Alpha" required>
+                        </div>
+                        <div class="duo">
+                            <label>Início <input name="inicio" type="date"></label>
+                            <label>Fim <input name="fim" type="date"></label>
+                        </div>
+                        <div class="duo">
+                            <button class="btn" type="submit">Salvar turno</button>
+                            <button id="btnLimparTurno" class="btn" type="button">Limpar</button>
+                        </div>
+                    </form>
+                    <div id="resumoTurnos" class="turno-resumo"></div>
+                    <div id="turnosSemana" class="chips"></div>
+                    </div>
+                </details>
+            </aside>
+        </main>
+    </div>
+
+    <div id="modal" class="modal oculto">
+        <form id="formLinha" class="modal-box">
+            <h2>Editar dia</h2>
+            <input name="data" type="hidden">
+            <label>Tipo
+                <select name="tipo">
+                    <option value="regular">Regular</option>
+                    <option value="especial">Especial</option>
+                    <option value="prioritaria">Prioritaria</option>
+                </select>
+            </label>
+            <label>Colaborador
+                <select name="colaborador_id"></select>
+            </label>
+            <label>Origem
+                <input name="origem">
+            </label>
+            <label>Observação
+                <textarea name="observacao" rows="3"></textarea>
+            </label>
+            <div class="modal-actions">
+                <button id="btnFecharModal" class="btn" type="button">Cancelar</button>
+                <button class="btn primary" type="submit">Salvar</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="toast" class="toast oculto"></div>
+    <script src="/static/script.js"></script>
+</body>
+</html>
+

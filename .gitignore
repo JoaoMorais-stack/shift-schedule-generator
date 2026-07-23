@@ -1,0 +1,54 @@
+# Python caches and test output
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+tests/.tmp-*/
+
+# Virtual environments and local configuration
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+env/
+ENV/
+
+# Local databases and runtime data
+Data/*
+!Data/.gitkeep
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Logs, temporary files, and backups
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+~$*
+
+# Build and packaging output
+build/
+dist/
+*.egg-info/
+*.spec
+Runtime/
+
+# Editors and operating systems
+.idea/
+.vscode/
+*.code-workspace
+.DS_Store
+Thumbs.db
+Desktop.ini
+
